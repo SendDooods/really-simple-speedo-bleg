@@ -41,34 +41,91 @@ document.addEventListener('DOMContentLoaded', () => {
     // Auto-detect motorcycle using RageMP
     const detectVehicleType = () => {
         try {
-            // Check if RageMP is available
-            if (typeof mp !== 'undefined' && mp.players && mp.players.local && mp.players.local.vehicle) {
-                const vehicle = mp.players.local.vehicle;
-                if (vehicle) {
-                    // Get vehicle class - motorcycles are usually class 8
-                    const vehicleClass = vehicle.getClass();
-                    const isMotorcycle = vehicleClass === 8;
+            console.log('Checking for RageMP...', typeof mp);
 
-                    // Update vehicle type if it changed
-                    if (vehicleState.isMotorcycle !== isMotorcycle) {
-                        window.setVehicleType(isMotorcycle ? 'motorcycle' : 'car');
-                        console.log('Vehicle type detected:', isMotorcycle ? 'motorcycle' : 'car');
+            // Check if RageMP is available
+            if (typeof mp !== 'undefined') {
+                console.log('RageMP found, checking player...');
+
+                if (mp.players && mp.players.local) {
+                    console.log('Local player found, checking vehicle...');
+
+                    const vehicle = mp.players.local.vehicle;
+                    console.log('Current vehicle:', vehicle);
+
+                    if (vehicle) {
+                        // Try different methods to get vehicle info
+                        let isMotorcycle = false;
+
+                        // Method 1: Try getClass()
+                        try {
+                            const vehicleClass = vehicle.getClass();
+                            console.log('Vehicle class:', vehicleClass);
+                            isMotorcycle = vehicleClass === 8;
+                        } catch (e) {
+                            console.log('getClass() failed:', e);
+                        }
+
+                        // Method 2: Try model hash
+                        if (!isMotorcycle) {
+                            try {
+                                const model = vehicle.model;
+                                console.log('Vehicle model:', model);
+                                // Add known motorcycle model hashes here
+                                const motorcycleModels = [
+                                    -1842748181, // PCJ
+                                    -1404136503, // Faggio
+                                    1491277511,  // Akuma
+                                    // Add more motorcycle model hashes as needed
+                                ];
+                                isMotorcycle = motorcycleModels.includes(model);
+                            } catch (e) {
+                                console.log('Model check failed:', e);
+                            }
+                        }
+
+                        // Method 3: Try type property
+                        if (!isMotorcycle) {
+                            try {
+                                const vehicleType = vehicle.type;
+                                console.log('Vehicle type:', vehicleType);
+                                isMotorcycle = vehicleType === 'motorcycle' || vehicleType === 8;
+                            } catch (e) {
+                                console.log('Type check failed:', e);
+                            }
+                        }
+
+                        console.log('Is motorcycle:', isMotorcycle);
+
+                        // Update vehicle type if it changed
+                        if (vehicleState.isMotorcycle !== isMotorcycle) {
+                            window.setVehicleType(isMotorcycle ? 'motorcycle' : 'car');
+                            console.log('Vehicle type updated to:', isMotorcycle ? 'motorcycle' : 'car');
+                        }
+                    } else {
+                        console.log('Player not in vehicle');
+                        // Player not in vehicle - default to car
+                        if (vehicleState.isMotorcycle !== false) {
+                            window.setVehicleType('car');
+                            console.log('Player not in vehicle - set to car');
+                        }
                     }
                 } else {
-                    // Player not in vehicle - default to car
-                    if (vehicleState.isMotorcycle !== false) {
-                        window.setVehicleType('car');
-                        console.log('Player not in vehicle - set to car');
-                    }
+                    console.log('Local player not found');
                 }
+            } else {
+                console.log('RageMP not available - using manual mode');
             }
         } catch (error) {
-            console.log('RageMP not available or error detecting vehicle:', error);
+            console.log('Error detecting vehicle:', error);
         }
     };
 
-    // Auto-detect vehicle type every 500ms
-    setInterval(detectVehicleType, 500);
+    // Auto-detect vehicle type every 1000ms (reduced frequency for debugging)
+    setInterval(detectVehicleType, 1000);
+
+    // Run detection immediately
+    detectVehicleType();
 
     const manageLoopingAudio = (audioEl, shouldPlay) => {
         // Audio disabled - function does nothing
@@ -170,7 +227,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Add gear warning when RPM is high (80%+)
                 box.classList.toggle('gear-warning', rpm >= 0.8 && i < active);
             });
-            
+
             // Update gear display warning based on RPM
             if (els.gear) {
                 els.gear.classList.toggle('gear-warning', rpm >= 0.8);
