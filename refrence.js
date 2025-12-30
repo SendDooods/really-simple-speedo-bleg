@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const vehicleState = {
         engineOn: false,
         hasMoved: false,
-        isMotorcycle: false,
+        isMotorcycle: true,
         fuelLevel: 100, // Store last fuel level
         healthLevel: 100 // Store last health level
     };
@@ -317,9 +317,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     window.setSeatbelts = (isBuckled) => {
-        console.log('setSeatbelts called with:', isBuckled);
-        console.log('vehicleState.engineOn:', vehicleState.engineOn);
-
         if (vehicleState.isMotorcycle) {
             manageLoopingAudio(els.audio.alarm, false);
             return;
@@ -327,35 +324,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const isWearingBelt = !!isBuckled;
         vehicleState.seatbeltBuckled = isWearingBelt; // Store seatbelt state
-        console.log('isWearingBelt:', isWearingBelt);
 
         // Update old icon-based seatbelt if it exists
         toggleIcon('seatbelt', isWearingBelt);
 
         // Update new PNG-based seatbelt indicator
         if (els.seatbeltIndicator) {
-            console.log('seatbeltIndicator found');
             els.seatbeltIndicator.classList.remove('active', 'warning');
 
             if (!vehicleState.engineOn) {
-                console.log('Engine off - default state');
                 // Engine off: default dim state (handled by CSS)
             } else {
-                console.log('Engine on');
                 // Engine on: full opacity (force override any CSS animations)
                 if (isWearingBelt) {
-                    console.log('Adding active class');
                     // Buckled: green
                     els.seatbeltIndicator.classList.add('active');
                 } else {
-                    console.log('Adding warning class');
                     // Not buckled: red flashing
                     els.seatbeltIndicator.classList.add('warning');
                 }
             }
-            console.log('Current classes:', els.seatbeltIndicator.className);
-        } else {
-            console.log('seatbeltIndicator NOT found');
         }
 
         const shouldPlayAlarm = !isWearingBelt && vehicleState.engineOn;
